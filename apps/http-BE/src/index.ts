@@ -1,8 +1,9 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
-import {JWT_SECRET} from "@repo/backend-common/config";
+
 import { middleware } from './middleware';
 import { CreateUserSchema , SigninSchema , CreateRoonSchema } from '@repo/common/types';
+import { JWT_SECRET } from '@repo/backend-common/config';
 
 const app = express();
 
@@ -39,7 +40,7 @@ app.post("/signin", (req, res) => {
   })
 })
 
-app.post("/room",middleware,  (req, res) => {
+app.post("/room", middleware,  (req, res) => {
   const data = CreateRoonSchema.safeParse(req.body);
   if(!data.success){
     res.json({
@@ -54,4 +55,4 @@ app.post("/room",middleware,  (req, res) => {
 })
 
 
-app.listen(3000);
+app.listen(3001);
