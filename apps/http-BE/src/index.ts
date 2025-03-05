@@ -8,6 +8,7 @@ import { prismaClient } from '@repo/db/client';
 
 
 const app = express();
+app.use(express.json());
 
 app.post("/signup", async (req, res) => {
 
@@ -19,7 +20,7 @@ app.post("/signup", async (req, res) => {
     return;
   }
   try{
-    await prismaClient.user.create({
+   const user =  await prismaClient.user.create({
       data: {
         email: parseData.data?.username,
         password: parseData.data?.password,
@@ -28,7 +29,7 @@ app.post("/signup", async (req, res) => {
   
     })
     res.json({
-      roomId: "123"
+      userId: user.id
     })
   } catch(e){
     res.status(411).json({
@@ -37,37 +38,62 @@ app.post("/signup", async (req, res) => {
   }
 })
 
-app.post("/signin", (req, res) => {
-  const data = SigninSchema.safeParse(req.body);
-  if(!data.success){
+app.post("/signin", async (req, res) => {
+  const parseData = SigninSchema.safeParse(req.body);
+  if(!parseData.success){
     res.json({
       message: "Invalid data"
     })
     return;
   }
+  const user = await prismaClient.user.findFirst({
+    where: {
+      email: parseData.data.username,
+      password: parseData.data.password
+    }
+  })
+  if(!user){
+    res.status(403).json({
+      message: "Invalid credentials"
+    })
+    return;
+  }
 
-
-  const userId = 1;
   const token = jwt.sign({
-    userId
+    userId: user?.id
   }, JWT_SECRET)
   res.json({
     token
   })
 })
 
-app.post("/room", middleware,  (req, res) => {
-  const data = CreateRoonSchema.safeParse(req.body);
-  if(!data.success){
+app.post("/room", middleware, async  (req, res) => {
+  const parseData = CreateRoonSchema.safeParse(req.body);
+  if(!parseData.success){
     res.json({
       message: "Invalid data"
     })
     return;
   }
-
-  res.json({
-    roomId: 123
-  })
+// @ts-ignore
+  const userId = req.userId;
+  
+  try{
+    const room = await prismaClient.room.create({
+      data:{
+        slug: parseData.data.name,
+        adminId: userId
+      }
+    })
+    res.json({
+      roomId: room.id
+    })
+  } catch(e){
+    res.status(411).json({
+      message: "Room already exists with this name"
+    })
+  }
+ 
 })
 
 
